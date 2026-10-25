@@ -82,14 +82,19 @@ aggregateWorker.on("failed", (job, err) => {
   console.error(`[worker] aggregate job ${job?.id} failed:`, err.message);
 });
 
-await aggregateQueue.add(
-  "refresh",
-  {},
-  {
-    repeat: { every: 15 * 60_000 },
-    removeOnComplete: true,
-    removeOnFail: true,
-  },
-);
+async function scheduleAggregateRefresh() {
+  await aggregateQueue.add(
+    "refresh",
+    {},
+    {
+      repeat: { every: 15 * 60_000 },
+      removeOnComplete: true,
+      removeOnFail: true,
+    },
+  );
+}
 
-console.info("[worker] started: evidence-processing + aggregate-refresh");
+scheduleAggregateRefresh().then(
+  () => console.info("[worker] started: evidence-processing + aggregate-refresh"),
+  (err) => console.error("[worker] failed to schedule refresh:", err),
+);

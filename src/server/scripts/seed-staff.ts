@@ -10,31 +10,42 @@ import { encryptContact, hashContact } from "../crypto";
  * The moderator then signs in via the normal OTP flow (the code is logged to
  * the server console in development).
  */
-const contact = process.argv[2] ?? "moderator@dev.test";
-const contactHash = hashContact(contact);
+async function main() {
+  const contact = process.argv[2] ?? "moderator@dev.test";
+  const contactHash = hashContact(contact);
 
-const [existing] = await db
-  .select({ id: accounts.id })
-  .from(accounts)
-  .where(eq(accounts.contactHash, contactHash))
-  .limit(1);
+  const [existing] = await db
+    .select({ id: accounts.id })
+    .from(accounts)
+    .where(eq(accounts.contactHash, contactHash))
+    .limit(1);
 
-if (existing) {
-  await db
-    .update(accounts)
-    .set({ role: "moderator" })
-    .where(eq(accounts.id, existing.id));
-  console.info(`Promoted existing account to moderator: ${contact}`);
-} else {
-  await db.insert(accounts).values({
-    contactEncrypted: encryptContact(contact),
-    contactHash,
-    contactType: "email",
-    role: "moderator",
-    verifiedAt: new Date(),
-  });
-  console.info(`Created moderator account: ${contact}`);
+  if (existing) {
+    await db
+      .update(accounts)
+      .set({ role: "moderator" })
+      .where(eq(accounts.id, existing.id));
+    console.info(`Promoted existing account to moderator: ${contact}`);
+  } else {
+    await db.insert(accounts).values({
+      contactEncrypted: encryptContact(contact),
+      contactHash,
+      contactType: "email",
+      role: "moderator",
+      verifiedAt: new Date(),
+    });
+    console.info(`Created moderator account: ${contact}`);
+  }
+
+  console.info(
+    "Sign in at /login with this email; the OTP prints to this console.",
+  );
 }
 
-console.info("Sign in at /login with this email; the OTP prints to this console.");
-process.exit(0);
+main().then(
+  () => process.exit(0),
+  (err) => {
+    console.error(err);
+    process.exit(1);
+  },
+);

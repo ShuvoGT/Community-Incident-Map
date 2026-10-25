@@ -2,7 +2,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { db } from "../db";
 import { submissions, incidents, reviewsAndFlags } from "../db/schema";
 import { deriveCell, isWithinLaunchArea } from "@/lib/h3";
-import { timeBandFromLocalTime } from "@/lib/time";
+import { recomputeCellWindow } from "./aggregates";
 import type {
   SubmissionCreateInput,
   SubmissionCorrectionInput,
@@ -152,6 +152,8 @@ export async function withdrawSubmission(
       .update(incidents)
       .set({ publicationState: "withdrawn", updatedAt: new Date() })
       .where(eq(incidents.id, current.canonicalIncidentId));
+    // Remove from aggregate eligibility immediately.
+    if (current.cellId) await recomputeCellWindow(current.cellId);
   }
 
   await db.insert(reviewsAndFlags).values({
