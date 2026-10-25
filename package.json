@@ -12,6 +12,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
+    "test:e2e": "playwright test",
     "worker": "tsx src/server/worker/index.ts",
     "seed:staff": "tsx src/server/scripts/seed-staff.ts",
     "seed:demo": "tsx src/server/scripts/seed-demo.ts",
@@ -41,6 +42,7 @@
     "otplib": "^12.0.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.49.1",
     "@types/node": "^22.10.5",
     "@types/react": "^19.0.6",
     "@types/react-dom": "^19.0.3",

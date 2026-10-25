@@ -103,6 +103,96 @@ export async function publishSubmission(
   return { incidentId: incident.id, publicId: incident.publicId };
 }
 
+// Merge duplicate submissions of the same event into one canonical incident.
+// Each child is marked 'merged' and linked to the incident; it produces no
+// incident of its own, so the event counts once. If a child was already
+// published, its own incident is withdrawn and that cell recomputed.
+export async function mergeIntoIncident(
+  actorId: string,
+  incidentId: string,
+  submissionIds: string[],
+): Promise<number> {
+  const [incident] = await db
+    .select({ id: incidents.id })
+    .from(incidents)
+    .where(eq(incidents.id, incidentId))
+    .limit(1);
+  if (!incident) throw new Error("Canonical incident not found");
+
+  let merged = 0;
+  for (const id of submissionIds) {
+    const [sub] = await db
+      .select()
+      .from(submissions)
+      .where(eq(submissions.id, id))
+      .limit(1);
+    if (!sub || sub.canonicalIncidentId === incidentId) continue;
+
+    // If this duplicate was published on its own, retire that incident.
+    if (sub.status === "published" && sub.canonicalIncidentId) {
+      await db
+        .update(incidents)
+        .set({ publicationState: "withdrawn", updatedAt: new Date() })
+        .where(eq(incidents.id, sub.canonicalIncidentId));
+      if (sub.cellId) await recomputeCellWindow(sub.cellId);
+    }
+
+    await db
+      .update(submissions)
+      .set({
+        status: "merged",
+        canonicalIncidentId: incidentId,
+        version: sub.version + 1,
+        updatedAt: new Date(),
+      })
+      .where(eq(submissions.id, id));
+
+    await db.insert(reviewsAndFlags).values({
+      targetType: "submission",
+      targetId: id,
+      actorId,
+      action: "merged",
+      reason: `into incident ${incidentId}`,
+      beforeVersion: sub.version,
+      afterVersion: sub.version + 1,
+    });
+    merged++;
+  }
+  return merged;
+}
+
+// Reverse a merge: the submission becomes an independent review item again.
+export async function unmergeSubmission(
+  actorId: string,
+  submissionId: string,
+): Promise<void> {
+  const [sub] = await db
+    .select()
+    .from(submissions)
+    .where(eq(submissions.id, submissionId))
+    .limit(1);
+  if (!sub) throw new Error("Submission not found");
+
+  await db
+    .update(submissions)
+    .set({
+      status: "under_review",
+      canonicalIncidentId: null,
+      version: sub.version + 1,
+      updatedAt: new Date(),
+    })
+    .where(eq(submissions.id, submissionId));
+
+  await db.insert(reviewsAndFlags).values({
+    targetType: "submission",
+    targetId: submissionId,
+    actorId,
+    action: "unmerged",
+    beforeVersion: sub.version,
+    afterVersion: sub.version + 1,
+  });
+}
+
 export async function decideSubmission(
   actorId: string,
   submissionId: string,

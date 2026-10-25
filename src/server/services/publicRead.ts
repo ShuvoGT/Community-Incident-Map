@@ -95,9 +95,24 @@ export async function getHotspots(now: Date = new Date()) {
     statusBreakdown: r.statusBreakdown,
   }));
 
+  // Broad-area reports are counted in totals but excluded from the grid; the
+  // excluded count is disclosed alongside the layer.
+  const [{ excluded }] = await db
+    .select({ excluded: sql<number>`count(*)::int` })
+    .from(incidents)
+    .where(
+      and(
+        eq(incidents.publicationState, "published"),
+        gte(incidents.occurrenceDate, window.start),
+        lte(incidents.occurrenceDate, window.end),
+        sql`${incidents.cellId} is null`,
+      ),
+    );
+
   return {
     scale: "weekly" as const,
     cells,
+    excludedBroadArea: Number(excluded),
     dateRange: { start: window.start, end: window.end },
     timezone: "Asia/Dhaka",
     ruleVersion: RULE_VERSION,
