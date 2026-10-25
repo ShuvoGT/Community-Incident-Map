@@ -1,6 +1,7 @@
-import { and, eq, gt, isNull } from "drizzle-orm";
+import { and, eq, gt, gte, isNull, sql } from "drizzle-orm";
 import { db } from "../db";
 import { verificationCodes, accounts } from "../db/schema";
+import { getRateLimits } from "./config";
 import {
   encryptContact,
   hashContact,
@@ -36,6 +37,22 @@ export async function requestVerification(
   channel: Channel,
 ): Promise<void> {
   const contactHash = hashContact(contact);
+
+  // Throttle OTP requests per contact (configurable). Drop silently over the
+  // limit so the caller response stays neutral.
+  const limits = await getRateLimits();
+  const hourAgo = new Date(Date.now() - 3_600_000);
+  const [{ c }] = await db
+    .select({ c: sql<number>`count(*)::int` })
+    .from(verificationCodes)
+    .where(
+      and(
+        eq(verificationCodes.contactHash, contactHash),
+        gte(verificationCodes.createdAt, hourAgo),
+      ),
+    );
+  if (Number(c) >= limits.otpPerContactPerHour) return;
+
   const code = generateOtp();
   const expiresAt = new Date(Date.now() + CODE_TTL_MS);
 

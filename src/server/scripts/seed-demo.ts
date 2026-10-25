@@ -44,7 +44,6 @@ async function ensureAccount(contact: string, role: "reporter" | "moderator") {
 }
 
 async function main() {
-  const reporterId = await ensureAccount("demo-reporter@dev.test", "reporter");
   const moderatorId = await ensureAccount("demo-mod@dev.test", "moderator");
   const dates = rollingWindow(30).dates;
   const daysAgo = (n: number) => dates[dates.length - 1 - n];
@@ -64,6 +63,11 @@ async function main() {
   for (const [lat, lng, label, count, maxDays] of clusters) {
     for (let i = 0; i < count; i++) {
       const key = `demo-${label}-${i}`;
+      // A fresh reporter per incident keeps the demo under the per-contact cap.
+      const reporterId = await ensureAccount(
+        `demo-rep-${n}-${i}@dev.test`,
+        "reporter",
+      );
       const withWeapon = i % 5 === 0;
       const input: SubmissionCreateInput = {
         category: CATEGORIES[i % CATEGORIES.length],

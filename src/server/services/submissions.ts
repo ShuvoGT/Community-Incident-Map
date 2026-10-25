@@ -1,14 +1,17 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { db } from "../db";
 import { submissions, incidents, reviewsAndFlags } from "../db/schema";
 import { deriveCell, isWithinLaunchArea } from "@/lib/h3";
+import { dhakaToday } from "@/lib/time";
 import { recomputeCellWindow } from "./aggregates";
+import { getRateLimits } from "./config";
 import type {
   SubmissionCreateInput,
   SubmissionCorrectionInput,
 } from "@/lib/validation";
 
 export class LocationOutOfAreaError extends Error {}
+export class DailySubmissionLimitError extends Error {}
 
 // Create a submission. The raw coordinate is converted to an H3 cell and then
 // discarded — only the cell id is persisted. Idempotent per (owner, key): a
@@ -29,6 +32,20 @@ export async function createSubmission(
     )
     .limit(1);
   if (existing) return existing;
+
+  // Per-verified-contact daily cap (configurable). The idempotent retry above
+  // returns before this, so a retry never counts against the cap.
+  const limits = await getRateLimits();
+  const dayStart = new Date(`${dhakaToday()}T00:00:00+06:00`);
+  const [{ c }] = await db
+    .select({ c: sql<number>`count(*)::int` })
+    .from(submissions)
+    .where(
+      and(eq(submissions.ownerId, ownerId), gte(submissions.createdAt, dayStart)),
+    );
+  if (Number(c) >= limits.submissionsPerContactPerDay) {
+    throw new DailySubmissionLimitError();
+  }
 
   let cellId: string | null = null;
   if (input.locationPrecision === "street") {

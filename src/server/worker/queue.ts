@@ -10,9 +10,11 @@ export const connection = new IORedis(env.redisUrl, {
 
 export const EVIDENCE_QUEUE = "evidence-processing";
 export const AGGREGATE_QUEUE = "aggregate-refresh";
+export const RETENTION_QUEUE = "retention";
 
 export const evidenceQueue = new Queue(EVIDENCE_QUEUE, { connection });
 export const aggregateQueue = new Queue(AGGREGATE_QUEUE, { connection });
+export const retentionQueue = new Queue(RETENTION_QUEUE, { connection });
 
 export type EvidenceJob = { evidenceId: string };
 

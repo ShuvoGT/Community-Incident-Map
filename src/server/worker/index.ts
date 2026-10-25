@@ -11,11 +11,14 @@ import {
   sniffType,
 } from "../services/evidence";
 import { recomputeAllWindows } from "../services/aggregates";
+import { runRetention } from "../services/retention";
 import {
   connection,
   EVIDENCE_QUEUE,
   AGGREGATE_QUEUE,
+  RETENTION_QUEUE,
   aggregateQueue,
+  retentionQueue,
   type EvidenceJob,
 } from "./queue";
 
@@ -82,19 +85,37 @@ aggregateWorker.on("failed", (job, err) => {
   console.error(`[worker] aggregate job ${job?.id} failed:`, err.message);
 });
 
-async function scheduleAggregateRefresh() {
+// Retention: apply the configured deletion policy once a day.
+const retentionWorker = new Worker(
+  RETENTION_QUEUE,
+  async () => {
+    const summary = await runRetention();
+    console.info("[worker] retention run:", JSON.stringify(summary));
+  },
+  { connection },
+);
+
+retentionWorker.on("failed", (job, err) => {
+  console.error(`[worker] retention job ${job?.id} failed:`, err.message);
+});
+
+async function scheduleRepeats() {
   await aggregateQueue.add(
     "refresh",
     {},
-    {
-      repeat: { every: 15 * 60_000 },
-      removeOnComplete: true,
-      removeOnFail: true,
-    },
+    { repeat: { every: 15 * 60_000 }, removeOnComplete: true, removeOnFail: true },
+  );
+  await retentionQueue.add(
+    "run",
+    {},
+    { repeat: { every: 24 * 60 * 60_000 }, removeOnComplete: true, removeOnFail: true },
   );
 }
 
-scheduleAggregateRefresh().then(
-  () => console.info("[worker] started: evidence-processing + aggregate-refresh"),
-  (err) => console.error("[worker] failed to schedule refresh:", err),
+scheduleRepeats().then(
+  () =>
+    console.info(
+      "[worker] started: evidence-processing + aggregate-refresh + retention",
+    ),
+  (err) => console.error("[worker] failed to schedule repeats:", err),
 );

@@ -12,6 +12,7 @@ import { encryptContact, hashContact } from "../crypto";
  */
 async function main() {
   const contact = process.argv[2] ?? "moderator@dev.test";
+  const role = process.argv[3] === "admin" ? "admin" : "moderator";
   const contactHash = hashContact(contact);
 
   const [existing] = await db
@@ -23,18 +24,18 @@ async function main() {
   if (existing) {
     await db
       .update(accounts)
-      .set({ role: "moderator" })
+      .set({ role })
       .where(eq(accounts.id, existing.id));
-    console.info(`Promoted existing account to moderator: ${contact}`);
+    console.info(`Promoted existing account to ${role}: ${contact}`);
   } else {
     await db.insert(accounts).values({
       contactEncrypted: encryptContact(contact),
       contactHash,
       contactType: "email",
-      role: "moderator",
+      role,
       verifiedAt: new Date(),
     });
-    console.info(`Created moderator account: ${contact}`);
+    console.info(`Created ${role} account: ${contact}`);
   }
 
   console.info(

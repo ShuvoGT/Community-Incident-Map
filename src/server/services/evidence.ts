@@ -1,4 +1,9 @@
-import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+  DeleteObjectCommand,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { db } from "../db";
 import { evidence } from "../db/schema";
@@ -101,6 +106,17 @@ export async function putEvidenceObject(
       ContentType: contentType,
     }),
   );
+}
+
+// Best-effort delete of a stored object (used by retention). Never throws.
+export async function deleteEvidenceObject(objectKey: string): Promise<void> {
+  try {
+    await s3().send(
+      new DeleteObjectCommand({ Bucket: env.s3.bucket, Key: objectKey }),
+    );
+  } catch {
+    /* object may already be gone, or storage unavailable */
+  }
 }
 
 // Magic-byte check: the declared type must match the actual file signature.

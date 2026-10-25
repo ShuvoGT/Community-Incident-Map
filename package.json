@@ -15,7 +15,11 @@
     "worker": "tsx src/server/worker/index.ts",
     "seed:staff": "tsx src/server/scripts/seed-staff.ts",
     "seed:demo": "tsx src/server/scripts/seed-demo.ts",
-    "smoke": "tsx src/server/scripts/smoke.ts"
+    "smoke": "tsx src/server/scripts/smoke.ts",
+    "retention": "tsx src/server/scripts/retention.ts",
+    "loadseed": "tsx src/server/scripts/loadseed.ts",
+    "loadtest": "tsx src/server/scripts/loadtest.ts",
+    "recompute": "tsx src/server/scripts/recompute.ts"
   },
   "dependencies": {
     "next": "^15.1.6",
@@ -33,7 +37,8 @@
     "@aws-sdk/client-s3": "^3.726.0",
     "@aws-sdk/s3-request-presigner": "^3.726.0",
     "bullmq": "^5.34.9",
-    "ioredis": "^5.4.2"
+    "ioredis": "^5.4.2",
+    "otplib": "^12.0.1"
   },
   "devDependencies": {
     "@types/node": "^22.10.5",

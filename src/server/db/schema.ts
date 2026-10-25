@@ -360,6 +360,8 @@ export const sessions = pgTable(
       .notNull()
       .references(() => accounts.id),
     tokenHash: text("token_hash").notNull(),
+    // true while a staff session is awaiting its second factor (TOTP).
+    mfaPending: boolean("mfa_pending").notNull().default(false),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

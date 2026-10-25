@@ -11,6 +11,8 @@ export function VerifyPanel({ onVerified }: { onVerified: () => void }) {
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+  const [mfaRequired, setMfaRequired] = useState(false);
+  const [mfaCode, setMfaCode] = useState("");
 
   async function sendCode() {
     setBusy(true);
@@ -40,9 +42,14 @@ export function VerifyPanel({ onVerified }: { onVerified: () => void }) {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ contact, contactType: "email", code }),
       });
+      const d = await r.json().catch(() => ({}));
       if (!r.ok) {
-        const d = await r.json().catch(() => ({}));
         throw new Error(d.error ?? "Verification failed");
+      }
+      if (d.mfaRequired) {
+        setMfaRequired(true);
+        setMsg("Enter the code from your authenticator app.");
+        return;
       }
       onVerified();
     } catch (e) {
@@ -52,38 +59,81 @@ export function VerifyPanel({ onVerified }: { onVerified: () => void }) {
     }
   }
 
+  async function confirmMfa() {
+    setBusy(true);
+    setMsg("");
+    try {
+      const r = await fetch("/api/verify/mfa", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ code: mfaCode }),
+      });
+      if (!r.ok) throw new Error("Invalid code");
+      onVerified();
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Invalid code");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <fieldset>
       <legend>Verify your contact</legend>
-      <label>
-        Email
-        <input
-          type="text"
-          value={contact}
-          onChange={(e) => setContact(e.target.value)}
-          placeholder="you@example.com"
-          autoComplete="email"
-        />
-      </label>
-      {!sent ? (
-        <button className="btn" type="button" onClick={sendCode} disabled={busy || !contact}>
-          Send code
-        </button>
-      ) : (
+      {mfaRequired ? (
         <>
           <label>
-            6-digit code
+            Authenticator code
             <input
               type="text"
               inputMode="numeric"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
+              value={mfaCode}
+              onChange={(e) => setMfaCode(e.target.value)}
               placeholder="123456"
             />
           </label>
-          <button className="btn" type="button" onClick={confirm} disabled={busy || code.length !== 6}>
-            Verify
+          <button
+            className="btn"
+            type="button"
+            onClick={confirmMfa}
+            disabled={busy || mfaCode.length !== 6}
+          >
+            Verify code
           </button>
+        </>
+      ) : (
+        <>
+          <label>
+            Email
+            <input
+              type="text"
+              value={contact}
+              onChange={(e) => setContact(e.target.value)}
+              placeholder="you@example.com"
+              autoComplete="email"
+            />
+          </label>
+          {!sent ? (
+            <button className="btn" type="button" onClick={sendCode} disabled={busy || !contact}>
+              Send code
+            </button>
+          ) : (
+            <>
+              <label>
+                6-digit code
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  placeholder="123456"
+                />
+              </label>
+              <button className="btn" type="button" onClick={confirm} disabled={busy || code.length !== 6}>
+                Verify
+              </button>
+            </>
+          )}
         </>
       )}
       {msg && <p className="notice">{msg}</p>}
