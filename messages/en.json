@@ -1,0 +1,69 @@
+{
+  "common": {
+    "appName": "Dhaka Community Incident Map",
+    "languageName": "English",
+    "switchTo": "বাংলা"
+  },
+  "nav": {
+    "home": "Map",
+    "report": "Report an incident",
+    "methodology": "Methodology",
+    "privacy": "Privacy"
+  },
+  "home": {
+    "title": "Community incident map",
+    "subtitle": "Moderated first-hand reports of robbery, snatching and theft in Dhaka.",
+    "disclaimer": "A highlighted area shows a concentration of published community reports — not a measure of personal risk. An area with no reports is not labelled safe.",
+    "sevenDay": "Last 7 days",
+    "thirtyDay": "Last 30 days",
+    "listView": "List view",
+    "mapView": "Map view",
+    "mapUnavailable": "Map is unavailable right now. Showing the list instead.",
+    "searchPlaceholder": "Search an area in Dhaka"
+  },
+  "legend": {
+    "title": "Weekly reporting activity",
+    "grey": "No published reports in this period",
+    "yellow": "Some reported incidents (1–4)",
+    "amber": "Elevated reported activity (5–9)",
+    "red": "High reported activity (10+)",
+    "note": "These are reporting-activity levels, not validated risk levels.",
+    "weaponBadge": "Weapon or injury reported"
+  },
+  "report": {
+    "title": "Report an incident",
+    "emergencyNotice": "If you are in immediate danger, contact emergency services first. This platform does not dispatch police.",
+    "intro": "Share a first-hand account. Your report stays anonymous to the public and is reviewed before it appears on the map.",
+    "steps": {
+      "category": "What happened",
+      "relationship": "Your relationship to the event",
+      "location": "Where it happened",
+      "datetime": "When it happened",
+      "experience": "Describe what happened",
+      "evidence": "Optional supporting evidence",
+      "verify": "Verify your contact",
+      "preview": "Preview the public version",
+      "consent": "Consent and submit"
+    },
+    "category": {
+      "robbery_force": "Robbery with force or threat",
+      "snatching": "Snatching",
+      "pickpocketing": "Pickpocketing",
+      "other_theft": "Other theft",
+      "attempted": "Attempted robbery or theft"
+    },
+    "relationship": {
+      "victim": "I was the victim",
+      "witness": "I directly witnessed it"
+    },
+    "experienceHint": "Describe the sequence of events and context. Do not include names, phone numbers or details that could identify anyone.",
+    "consentLabel": "I agree to the reporting rules and to anonymous public publication of a reviewed version.",
+    "submit": "Submit for review",
+    "prototypeNotice": "Prototype — this flow is not yet connected to the backend."
+  },
+  "receipt": {
+    "title": "Report received",
+    "body": "Your report has been received and is awaiting review. It will appear on the map after approval.",
+    "statusLink": "Keep this private link to track your report."
+  }
+}

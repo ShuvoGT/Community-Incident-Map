@@ -1,0 +1,42 @@
+{
+  "name": "community-incidents",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Dhaka Community Incident Map — community incident reporting and awareness platform",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "worker": "tsx src/server/worker/index.ts"
+  },
+  "dependencies": {
+    "next": "^15.1.6",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "next-intl": "^3.26.3",
+    "drizzle-orm": "^0.38.3",
+    "dotenv": "^16.4.7",
+    "postgres": "^3.4.5",
+    "h3-js": "^4.1.0",
+    "zod": "^3.24.1",
+    "maplibre-gl": "^4.7.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "@types/react": "^19.0.6",
+    "@types/react-dom": "^19.0.3",
+    "drizzle-kit": "^0.30.1",
+    "typescript": "^5.7.3",
+    "tsx": "^4.19.2",
+    "eslint": "^9.18.0",
+    "eslint-config-next": "^15.1.6"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

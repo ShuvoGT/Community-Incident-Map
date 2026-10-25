@@ -1,0 +1,45 @@
+# Local development infrastructure for the Dhaka Community Incident Map.
+# Production uses managed equivalents; this is for local dev only.
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: incidents-db
+    environment:
+      POSTGRES_USER: incidents
+      POSTGRES_PASSWORD: incidents
+      POSTGRES_DB: incidents
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./docker/db-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U incidents"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: incidents-redis
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+
+  # S3-compatible private object storage for evidence (never public).
+  minio:
+    image: minio/minio:latest
+    container_name: incidents-minio
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # console
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio-data:/data
+
+volumes:
+  db-data:
+  minio-data:
