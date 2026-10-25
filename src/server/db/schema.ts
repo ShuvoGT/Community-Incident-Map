@@ -62,6 +62,7 @@ export const submissionStatusEnum = pgEnum("submission_status", [
   "needs_clarification",
   "rejected",
   "merged",
+  "withdrawn",
 ]);
 
 export const publicationStateEnum = pgEnum("publication_state", [
@@ -325,3 +326,44 @@ export const configuration = pgTable("configuration", {
     .notNull()
     .defaultNow(),
 });
+
+/* ── Auth & verification (private) ──────────────────────────────── */
+
+// Short-lived one-time codes for contact verification. Stored against a
+// contact hash so a code can be issued before an account exists; the code
+// itself is stored only as a hash. Rate limiting keys off contact_hash.
+export const verificationCodes = pgTable(
+  "verification_codes",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    contactHash: text("contact_hash").notNull(),
+    contactEncrypted: text("contact_encrypted").notNull(),
+    contactType: contactTypeEnum("contact_type").notNull(),
+    codeHash: text("code_hash").notNull(),
+    attempts: integer("attempts").notNull().default(0),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    consumedAt: timestamp("consumed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("verification_contact_idx").on(t.contactHash)],
+);
+
+// Opaque session tokens for authenticated reporters and staff. Only the hash
+// of the token is stored; the raw token lives only in the client cookie.
+export const sessions = pgTable(
+  "sessions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id),
+    tokenHash: text("token_hash").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [uniqueIndex("sessions_token_hash_idx").on(t.tokenHash)],
+);

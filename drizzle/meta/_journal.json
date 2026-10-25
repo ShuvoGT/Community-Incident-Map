@@ -8,6 +8,20 @@
       "when": 1792914971911,
       "tag": "0000_exotic_kingpin",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792918054875,
+      "tag": "0001_pretty_mandroid",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792918646370,
+      "tag": "0002_yellow_tenebrous",
+      "breakpoints": true
     }
   ]
 }

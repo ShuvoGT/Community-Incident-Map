@@ -7,6 +7,8 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   // Privacy: never leak reporter identifiers through powered-by/server headers.
   poweredByHeader: false,
+  // Server-only native/optional-dep packages: load at runtime, don't bundle.
+  serverExternalPackages: ["bullmq", "ioredis", "sharp"],
 };
 
 export default withNextIntl(nextConfig);
