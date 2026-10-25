@@ -30,6 +30,20 @@
     "note": "এগুলো রিপোর্ট কার্যক্রমের মাত্রা, যাচাই করা ঝুঁকির মাত্রা নয়।",
     "weaponBadge": "অস্ত্র বা আঘাতের কথা জানানো হয়েছে"
   },
+  "dashboard": {
+    "window": "{start} – {end} · {tz}",
+    "reportsThisWeek": "এই সপ্তাহের রিপোর্ট",
+    "reportsSub": "প্রকাশিত, গত ৭ দিন",
+    "activeAreas": "সক্রিয় এলাকা",
+    "activeAreasSub": "রিপোর্টসহ সেল",
+    "weapon": "অস্ত্রের রিপোর্ট",
+    "withInjury": "{count} টিতে আঘাত",
+    "topArea": "সবচেয়ে সক্রিয় এলাকা",
+    "topAreaReports": "{count, plural, one {# টি রিপোর্ট} other {# টি রিপোর্ট}}",
+    "byCategory": "ধরন অনুযায়ী",
+    "recent": "সাম্প্রতিক রিপোর্ট",
+    "noneYet": "এখনো কোনো প্রকাশিত রিপোর্ট নেই।"
+  },
   "labels": {
     "category": {
       "robbery_force": "বলপ্রয়োগ বা হুমকিসহ ডাকাতি",

@@ -30,6 +30,20 @@
     "note": "These are reporting-activity levels, not validated risk levels.",
     "weaponBadge": "Weapon or injury reported"
   },
+  "dashboard": {
+    "window": "{start} – {end} · {tz}",
+    "reportsThisWeek": "Reports this week",
+    "reportsSub": "published, last 7 days",
+    "activeAreas": "Active areas",
+    "activeAreasSub": "cells with reports",
+    "weapon": "Weapon reported",
+    "withInjury": "{count} with injury",
+    "topArea": "Busiest area",
+    "topAreaReports": "{count, plural, one {# report} other {# reports}}",
+    "byCategory": "By category",
+    "recent": "Recent reports",
+    "noneYet": "No published reports yet."
+  },
   "labels": {
     "category": {
       "robbery_force": "Robbery with force or threat",

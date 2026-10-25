@@ -1,10 +1,18 @@
 import type { Metadata } from "next";
+import { Inter, Noto_Sans_Bengali } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getTranslations, getMessages } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import { Link } from "@/i18n/navigation";
 import "../globals.css";
+
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
+const bengali = Noto_Sans_Bengali({
+  subsets: ["bengali"],
+  variable: "--font-bengali",
+  display: "swap",
+});
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -42,7 +50,7 @@ export default async function LocaleLayout({
   const otherLocale = locale === "bn" ? "en" : "bn";
 
   return (
-    <html lang={locale}>
+    <html lang={locale} className={`${inter.variable} ${bengali.variable}`}>
       <body>
         <NextIntlClientProvider messages={messages}>
           <header className="site-header">

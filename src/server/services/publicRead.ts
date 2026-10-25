@@ -3,7 +3,7 @@ import { db } from "../db";
 import { aggregates, incidents } from "../db/schema";
 import { cellBoundaryGeoJson, cellCenter } from "@/lib/h3";
 import { rollingWindow, sevenDayWindow } from "@/lib/time";
-import { bandForCount, RULE_VERSION } from "./aggregates";
+import { bandForCount, RULE_VERSION, type Band } from "./aggregates";
 
 // Only ever expose these safe, published fields — never contact, evidence,
 // financial loss, original narrative or a raw coordinate.
@@ -117,6 +117,63 @@ export async function getHotspots(now: Date = new Date()) {
     timezone: "Asia/Dhaka",
     ruleVersion: RULE_VERSION,
     generatedAt: new Date().toISOString(),
+  };
+}
+
+// Weekly headline stats for the dashboard. All derived from published
+// incidents in the rolling seven-day window.
+export async function getWeeklyStats(now: Date = new Date()) {
+  const window = sevenDayWindow(now);
+  const rows = await db
+    .select({
+      category: incidents.category,
+      cellId: incidents.cellId,
+      weaponFlag: incidents.weaponFlag,
+      injuryFlag: incidents.injuryFlag,
+    })
+    .from(incidents)
+    .where(
+      and(
+        eq(incidents.publicationState, "published"),
+        gte(incidents.occurrenceDate, window.start),
+        lte(incidents.occurrenceDate, window.end),
+      ),
+    );
+
+  const perCell = new Map<string, number>();
+  const byCategory: Record<string, number> = {};
+  let weaponCount = 0;
+  let injuryCount = 0;
+  let excludedBroadArea = 0;
+
+  for (const r of rows) {
+    byCategory[r.category] = (byCategory[r.category] ?? 0) + 1;
+    if (r.weaponFlag) weaponCount++;
+    if (r.injuryFlag) injuryCount++;
+    if (r.cellId) perCell.set(r.cellId, (perCell.get(r.cellId) ?? 0) + 1);
+    else excludedBroadArea++;
+  }
+
+  const bandCounts = { yellow: 0, amber: 0, red: 0 };
+  let topArea: { cellId: string; count: number; band: Band } | null = null;
+  for (const [cellId, count] of perCell) {
+    const band = bandForCount(count);
+    if (band !== "grey") bandCounts[band]++;
+    if (!topArea || count > topArea.count) topArea = { cellId, count, band };
+  }
+
+  return {
+    total: rows.length,
+    activeCells: perCell.size,
+    weaponCount,
+    injuryCount,
+    excludedBroadArea,
+    byCategory,
+    bandCounts,
+    topArea,
+    dateRange: { start: window.start, end: window.end },
+    timezone: "Asia/Dhaka",
+    ruleVersion: RULE_VERSION,
   };
 }
 
