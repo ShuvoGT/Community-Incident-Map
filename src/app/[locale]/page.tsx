@@ -1,8 +1,8 @@
 import { getTranslations } from "next-intl/server";
+import { HotspotMap } from "@/components/HotspotMap";
 
-// Home: map + legend placeholder. The real MapLibre map and the /hotspots
-// data layer arrive in Stage 3; this is the Stage 1 shell with the legend and
-// the non-negotiable "not a risk map" disclaimer in place.
+// Home: the live hotspot map + filters (with an accessible list fallback) and
+// the weekly legend, under the non-negotiable "not a risk map" disclaimer.
 export default async function HomePage() {
   const t = await getTranslations("home");
   const legend = await getTranslations("legend");
@@ -21,9 +21,7 @@ export default async function HomePage() {
 
       <div className="notice warn">{t("disclaimer")}</div>
 
-      <div className="map-placeholder" role="img" aria-label={t("mapView")}>
-        {t("mapView")} — MapLibre + H3 layer (Stage 3)
-      </div>
+      <HotspotMap />
 
       <h2>{legend("title")}</h2>
       <div className="legend">
@@ -33,17 +31,8 @@ export default async function HomePage() {
             <span>{legend(b.key)}</span>
           </div>
         ))}
-        <div className="row">
-          <span
-            className="swatch"
-            style={{ background: "transparent", borderStyle: "dashed" }}
-          />
-          <span>{legend("weaponBadge")}</span>
-        </div>
       </div>
-      <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>
-        {legend("note")}
-      </p>
+      <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>{legend("note")}</p>
     </section>
   );
 }

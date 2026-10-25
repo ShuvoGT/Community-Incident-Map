@@ -29,22 +29,26 @@ export function dhakaToday(now: Date = new Date()): string {
   return iso(y, m, d);
 }
 
-// The seven Dhaka calendar dates ending today (today is the last, partial day).
-export function sevenDayWindow(now: Date = new Date()): {
-  start: string;
-  end: string;
-  dates: string[];
-} {
+// The N Dhaka calendar dates ending today (today is the last, partial day).
+export function rollingWindow(
+  days: number,
+  now: Date = new Date(),
+): { start: string; end: string; dates: string[] } {
   const { y, m, d } = dhakaParts(now);
   const end = Date.UTC(y, m - 1, d);
   const dates: string[] = [];
-  for (let i = 6; i >= 0; i--) {
+  for (let i = days - 1; i >= 0; i--) {
     const day = new Date(end - i * 86_400_000);
     dates.push(
       iso(day.getUTCFullYear(), day.getUTCMonth() + 1, day.getUTCDate()),
     );
   }
   return { start: dates[0], end: dates[dates.length - 1], dates };
+}
+
+// The seven Dhaka calendar dates ending today — the weekly hotspot window.
+export function sevenDayWindow(now: Date = new Date()) {
+  return rollingWindow(7, now);
 }
 
 // A date (YYYY-MM-DD) is in the future if it is after today in Dhaka.

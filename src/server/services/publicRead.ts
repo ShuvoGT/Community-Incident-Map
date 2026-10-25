@@ -1,8 +1,8 @@
-import { and, desc, eq, gte, lte } from "drizzle-orm";
+import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { db } from "../db";
 import { aggregates, incidents } from "../db/schema";
 import { cellBoundaryGeoJson, cellCenter } from "@/lib/h3";
-import { sevenDayWindow } from "@/lib/time";
+import { rollingWindow, sevenDayWindow } from "@/lib/time";
 import { bandForCount, RULE_VERSION } from "./aggregates";
 
 // Only ever expose these safe, published fields — never contact, evidence,
@@ -96,8 +96,109 @@ export async function getHotspots(now: Date = new Date()) {
   }));
 
   return {
+    scale: "weekly" as const,
     cells,
     dateRange: { start: window.start, end: window.end },
+    timezone: "Asia/Dhaka",
+    ruleVersion: RULE_VERSION,
+    generatedAt: new Date().toISOString(),
+  };
+}
+
+// Filtered layer (30-day, category, time band). Computed live from published
+// incidents and returned on a NEUTRAL scale — never the weekly colour bands.
+export async function getFilteredHotspots(
+  opts: { days: number; category?: string; timeBand?: string },
+  now: Date = new Date(),
+) {
+  const window = rollingWindow(opts.days, now);
+  const conditions = [
+    eq(incidents.publicationState, "published"),
+    gte(incidents.occurrenceDate, window.start),
+    lte(incidents.occurrenceDate, window.end),
+    sql`${incidents.cellId} is not null`,
+  ];
+  if (opts.category) {
+    conditions.push(eq(incidents.category, opts.category as never));
+  }
+  if (opts.timeBand) {
+    conditions.push(eq(incidents.timeBand, opts.timeBand as never));
+  }
+
+  const rows = await db
+    .select({
+      cellId: incidents.cellId,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(incidents)
+    .where(and(...conditions))
+    .groupBy(incidents.cellId);
+
+  const cells = rows
+    .filter((r) => r.cellId)
+    .map((r) => ({
+      cellId: r.cellId!,
+      count: Number(r.count),
+      center: cellCenter(r.cellId!),
+      boundary: cellBoundaryGeoJson(r.cellId!),
+    }));
+
+  return {
+    scale: "filtered" as const,
+    cells,
+    dateRange: { start: window.start, end: window.end },
+    filters: {
+      days: opts.days,
+      category: opts.category ?? null,
+      timeBand: opts.timeBand ?? null,
+    },
+    timezone: "Asia/Dhaka",
+    generatedAt: new Date().toISOString(),
+  };
+}
+
+// Summary for one cell over a window: count, breakdowns and the public
+// incidents in it. Time-band breakdown is suppressed for small cells (<5).
+export async function getAreaSummary(
+  cell: string,
+  days = 7,
+  now: Date = new Date(),
+) {
+  const window = rollingWindow(days, now);
+
+  const rows = await db
+    .select(PUBLIC_COLUMNS)
+    .from(incidents)
+    .where(
+      and(
+        eq(incidents.cellId, cell),
+        eq(incidents.publicationState, "published"),
+        gte(incidents.occurrenceDate, window.start),
+        lte(incidents.occurrenceDate, window.end),
+      ),
+    )
+    .orderBy(desc(incidents.occurrenceDate));
+
+  const tally = (keys: (string | null)[]) => {
+    const out: Record<string, number> = {};
+    for (const k of keys) out[k ?? "unknown"] = (out[k ?? "unknown"] ?? 0) + 1;
+    return out;
+  };
+
+  const count = rows.length;
+  return {
+    cellId: cell,
+    count,
+    band: days === 7 ? bandForCount(count) : null,
+    center: cellCenter(cell),
+    dateRange: { start: window.start, end: window.end },
+    categoryBreakdown: tally(rows.map((r) => r.category)),
+    statusBreakdown: tally(rows.map((r) => r.reviewLabel)),
+    // Suppress time-band detail for sparse cells to avoid re-identification.
+    timeBreakdown: count >= 5 ? tally(rows.map((r) => r.timeBand)) : null,
+    weaponCount: rows.filter((r) => r.weaponFlag).length,
+    injuryCount: rows.filter((r) => r.injuryFlag).length,
+    incidents: rows,
     timezone: "Asia/Dhaka",
     ruleVersion: RULE_VERSION,
     generatedAt: new Date().toISOString(),
