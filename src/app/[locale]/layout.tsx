@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Noto_Sans_Bengali } from "next/font/google";
+import { Inter, Anek_Bangla } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getTranslations, getMessages } from "next-intl/server";
 import { notFound } from "next/navigation";
@@ -8,7 +8,7 @@ import { Link } from "@/i18n/navigation";
 import "../globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
-const bengali = Noto_Sans_Bengali({
+const bengali = Anek_Bangla({
   subsets: ["bengali"],
   variable: "--font-bengali",
   display: "swap",

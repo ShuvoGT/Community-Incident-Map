@@ -13,25 +13,31 @@ const BAND_COLOR: Record<string, string> = {
 };
 
 // A licensed vector basemap is used when a key is configured; otherwise the map
-// falls back to OpenStreetMap raster tiles (fine for dev/pilot with
-// attribution; production should use a licensed provider key).
+// falls back to Esri's free Dark Gray Canvas raster tiles (base + labels, with
+// attribution), which match the dark "Night Watch" theme. Production should use
+// a licensed provider key.
 const MAPTILER_KEY = process.env.NEXT_PUBLIC_MAPTILER_KEY;
 
-const OSM_STYLE = {
+const ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas";
+const DARK_STYLE = {
   version: 8 as const,
   sources: {
-    osm: {
+    base: {
       type: "raster" as const,
-      tiles: [
-        "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
-        "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
-        "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png",
-      ],
+      tiles: [`${ESRI}/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}`],
       tileSize: 256,
-      attribution: "© OpenStreetMap contributors",
+      attribution: "Esri · © OpenStreetMap contributors",
+    },
+    labels: {
+      type: "raster" as const,
+      tiles: [`${ESRI}/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}`],
+      tileSize: 256,
     },
   },
-  layers: [{ id: "osm", type: "raster" as const, source: "osm" }],
+  layers: [
+    { id: "base", type: "raster" as const, source: "base" },
+    { id: "labels", type: "raster" as const, source: "labels" },
+  ],
 };
 
 type Cell = {
@@ -191,7 +197,7 @@ export function HotspotMap() {
           container: containerRef.current,
           style: MAPTILER_KEY
             ? `https://api.maptiler.com/maps/streets-v2/style.json?key=${MAPTILER_KEY}`
-            : OSM_STYLE,
+            : DARK_STYLE,
           center: [90.4074, 23.7806],
           zoom: 11,
           // Don't hijack page scroll: wheel zoom needs Ctrl/⌘, drag pans.
@@ -216,7 +222,7 @@ export function HotspotMap() {
             id: "cells-outline",
             type: "line",
             source: "cells",
-            paint: { "line-color": "#1a1d21", "line-width": 0.6, "line-opacity": 0.35 },
+            paint: { "line-color": "#aebdd6", "line-width": 0.6, "line-opacity": 0.4 },
           });
           map.on("click", "cells-fill", (e) => {
             const f = e.features?.[0];
