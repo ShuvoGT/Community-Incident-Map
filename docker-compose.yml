@@ -29,19 +29,17 @@ services:
     command: ["redis-server", "--save", "", "--appendonly", "no"]
 
   # S3-compatible private object storage for evidence (never public).
-  minio:
-    image: minio/minio:latest
-    container_name: incidents-minio
+  # adobe/s3mock is used for local dev because the minio/minio image is not
+  # pullable in this environment; any S3-compatible store works in production.
+  # It pre-creates the evidence bucket and ignores credentials.
+  s3:
+    image: adobe/s3mock:3.12.0
+    container_name: incidents-s3
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      - initialBuckets=incident-evidence
+      - debug=false
     ports:
-      - "9100:9000"   # S3 API
-      - "9101:9001"   # console
-    command: server /data --console-address ":9001"
-    volumes:
-      - minio-data:/data
+      - "9100:9090"   # S3 API (host 9100 -> container 9090)
 
 volumes:
   db-data:
-  minio-data:

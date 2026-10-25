@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { getPublicIncident } from "@/server/services/publicRead";
 import { env } from "@/server/env";
-import { categoryLabel, timeBandLabel, reviewLabelText } from "@/lib/labels";
 import { ShareButton } from "@/components/ShareButton";
 import { ConcernForm } from "@/components/ConcernForm";
 
@@ -15,13 +15,14 @@ export async function generateMetadata({
   const incident = await getPublicIncident(publicId);
   const base = env.appBaseUrl;
   const canonical = `${base}/${locale}/incident/${publicId}`;
+  const l = await getTranslations({ locale, namespace: "labels" });
 
   if (!incident) {
     return { title: "Report unavailable", robots: { index: false } };
   }
 
   const title = `Community report near ${incident.broadArea ?? "Dhaka"}`;
-  const description = `${categoryLabel[incident.category] ?? incident.category} reported on ${incident.occurrenceDate}. ${reviewLabelText[incident.reviewLabel]}.`;
+  const description = `${l(`category.${incident.category}`)} reported on ${incident.occurrenceDate}. ${l(`reviewLabel.${incident.reviewLabel}`)}.`;
 
   return {
     title,
@@ -50,52 +51,53 @@ export default async function IncidentPage({
 }) {
   const { locale, publicId } = await params;
   const incident = await getPublicIncident(publicId);
+  const t = await getTranslations("incident");
+  const l = await getTranslations("labels");
 
   if (!incident) {
     return (
       <section>
-        <h1>Report unavailable</h1>
-        <p>This report is not currently available.</p>
+        <h1>{t("unavailableTitle")}</h1>
+        <p>{t("unavailableBody")}</p>
       </section>
     );
   }
 
   return (
     <section>
-      <h1>{categoryLabel[incident.category] ?? incident.category}</h1>
+      <h1>{l(`category.${incident.category}`)}</h1>
       <p style={{ color: "var(--muted)" }}>
         {incident.broadArea ?? "Dhaka"} · {incident.occurrenceDate} ·{" "}
-        {timeBandLabel[incident.timeBand]}
+        {l(`timeBand.${incident.timeBand}`)}
       </p>
 
       {(incident.weaponFlag || incident.injuryFlag) && (
         <div className="notice warn">
-          {incident.weaponFlag ? "Weapon reported. " : ""}
-          {incident.injuryFlag ? "Injury reported." : ""}
+          {incident.weaponFlag ? `${t("weaponReported")} ` : ""}
+          {incident.injuryFlag ? t("injuryReported") : ""}
         </div>
       )}
 
       <p>{incident.redactedNarrative}</p>
 
       <div className="notice">
-        <strong>{reviewLabelText[incident.reviewLabel]}</strong>
+        <strong>{l(`reviewLabel.${incident.reviewLabel}`)}</strong>
         <br />
-        Approximate area, not an exact incident point. Community reports are
-        incomplete and do not measure personal risk.
+        {t("approxNote")}
       </div>
 
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
         <ShareButton
           url={`/${locale}/incident/${publicId}`}
           title={`Community report near ${incident.broadArea ?? "Dhaka"}`}
-          text={`${categoryLabel[incident.category]} reported on ${incident.occurrenceDate}.`}
+          text={`${l(`category.${incident.category}`)} · ${incident.occurrenceDate}.`}
           cardUrl={`/api/og/incident/${publicId}`}
         />
         <ConcernForm publicId={publicId} />
       </div>
 
       <p style={{ color: "var(--muted)" }}>
-        Report ID: <code>{incident.publicId}</code>
+        {t("reportId")} <code>{incident.publicId}</code>
       </p>
     </section>
   );

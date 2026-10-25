@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { getAreaSummary } from "@/server/services/publicRead";
 import { env } from "@/server/env";
-import { categoryLabel, timeBandLabel, bandLabel } from "@/lib/labels";
 import { ShareButton } from "@/components/ShareButton";
 import { Link } from "@/i18n/navigation";
 
@@ -14,10 +14,13 @@ export async function generateMetadata({
   const summary = await getAreaSummary(cell, 7);
   const base = env.appBaseUrl;
   const canonical = `${base}/${locale}/area/${cell}`;
-  const title = `Area reporting summary (${summary.dateRange.start}–${summary.dateRange.end})`;
-  const description = `${summary.count} published report(s) this week.${
-    summary.band ? ` ${bandLabel[summary.band]} under the weekly thresholds.` : ""
-  } Reports are incomplete and do not measure personal risk.`;
+  const t = await getTranslations({ locale, namespace: "area" });
+  const l = await getTranslations({ locale, namespace: "labels" });
+
+  const title = t("title");
+  const description = `${t("summary", { count: summary.count })} ${
+    summary.band ? t("activitySuffix", { band: l(`band.${summary.band}`) }) : ""
+  }`.trim();
 
   return {
     title,
@@ -45,57 +48,64 @@ export default async function AreaPage({
 }) {
   const { locale, cell } = await params;
   const summary = await getAreaSummary(cell, 7);
+  const t = await getTranslations("area");
+  const l = await getTranslations("labels");
 
   return (
     <section>
-      <h1>Area reporting summary</h1>
+      <h1>{t("title")}</h1>
       <p style={{ color: "var(--muted)" }}>
-        {summary.dateRange.start} – {summary.dateRange.end} · {summary.timezone} ·
-        cell {cell}
+        {t("meta", {
+          start: summary.dateRange.start,
+          end: summary.dateRange.end,
+          tz: summary.timezone,
+          cell,
+        })}
       </p>
 
       <div className="notice warn">
-        {summary.count} published report{summary.count === 1 ? "" : "s"} this week.{" "}
-        {summary.band ? `${bandLabel[summary.band]} under the weekly thresholds. ` : ""}
-        An area summary reflects reporting activity, not personal risk; reporting
-        is incomplete.
+        {t("summary", { count: summary.count })}{" "}
+        {summary.band
+          ? `${t("activitySuffix", { band: l(`band.${summary.band}`) })} `
+          : ""}
+        {t("riskNote")}
       </div>
 
       {(summary.weaponCount > 0 || summary.injuryCount > 0) && (
         <p>
-          {summary.weaponCount} with a reported weapon · {summary.injuryCount} with
-          a reported injury.
+          {t("weaponInjury", {
+            weapon: summary.weaponCount,
+            injury: summary.injuryCount,
+          })}
         </p>
       )}
 
       {summary.timeBreakdown ? (
         <>
-          <h2>Time pattern</h2>
+          <h2>{t("timePattern")}</h2>
           <ul>
             {Object.entries(summary.timeBreakdown).map(([k, v]) => (
               <li key={k}>
-                {timeBandLabel[k] ?? k}: {v}
+                {l(`timeBand.${k}`)}: {v}
               </li>
             ))}
           </ul>
         </>
       ) : (
-        <p style={{ color: "var(--muted)" }}>
-          Time breakdown is hidden for cells with fewer than five reports.
-        </p>
+        <p style={{ color: "var(--muted)" }}>{t("timeHidden")}</p>
       )}
 
-      <h2>Reports in this area</h2>
+      <h2>{t("reportsHeading")}</h2>
       {summary.incidents.length === 0 ? (
-        <p>No published reports in this period.</p>
+        <p>{t("empty")}</p>
       ) : (
         <ul>
           {summary.incidents.map((i) => (
             <li key={i.publicId}>
               <Link href={`/incident/${i.publicId}`}>
-                {categoryLabel[i.category] ?? i.category} · {i.occurrenceDate}
+                {l(`category.${i.category}`)} · {i.occurrenceDate}
               </Link>
-              {i.weaponFlag ? " · ⚠ weapon" : ""}
+              {i.weaponFlag ? " · ⚠" : ""}
             </li>
           ))}
         </ul>
@@ -104,8 +114,8 @@ export default async function AreaPage({
       <div style={{ marginTop: 16 }}>
         <ShareButton
           url={`/${locale}/area/${cell}`}
-          title="Area reporting summary"
-          text={`${summary.count} published report(s) this week in this Dhaka area.`}
+          title={t("shareTitle")}
+          text={t("shareText", { count: summary.count })}
           cardUrl={`/api/og/area/${cell}`}
         />
       </div>

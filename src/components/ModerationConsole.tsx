@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 type QueueItem = {
   id: string;
@@ -32,6 +33,8 @@ type Detail = {
 // Moderator review console: queue → private detail → publish (with a redacted
 // narrative) or reject / request clarification.
 export function ModerationConsole() {
+  const t = useTranslations("moderate");
+  const tl = useTranslations("labels");
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [detail, setDetail] = useState<Detail | null>(null);
   const [redacted, setRedacted] = useState("");
@@ -69,7 +72,7 @@ export function ModerationConsole() {
       body: JSON.stringify({ ...body, expectedVersion: detail.submission.version }),
     });
     const d = await r.json().catch(() => ({}));
-    setMsg(r.ok ? "Done." : (d.error ?? "Action failed"));
+    setMsg(r.ok ? t("done") : (d.error ?? t("actionFailed")));
     if (r.ok) {
       setDetail(null);
       loadQueue();
@@ -79,15 +82,14 @@ export function ModerationConsole() {
   if (forbidden)
     return (
       <p>
-        Moderator access required. Sign in with a staff account at{" "}
-        <a href="../login">/login</a>.
+        {t("forbidden")} <a href="../login">/login</a>.
       </p>
     );
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 24 }}>
       <div>
-        <h2>Queue ({queue.length})</h2>
+        <h2>{t("queue", { count: queue.length })}</h2>
         {queue.map((q) => (
           <button
             key={q.id}
@@ -95,46 +97,48 @@ export function ModerationConsole() {
             style={{ display: "block", width: "100%", textAlign: "left", marginBottom: 8 }}
             onClick={() => open(q.id)}
           >
-            {q.occurrenceDate} · {q.category}
-            {q.weaponReported ? " · ⚠ weapon" : ""}
+            {q.occurrenceDate} · {tl(`category.${q.category}`)}
+            {q.weaponReported ? " · ⚠" : ""}
           </button>
         ))}
-        {queue.length === 0 && <p>Nothing awaiting review.</p>}
+        {queue.length === 0 && <p>{t("nothing")}</p>}
       </div>
 
       <div>
         {!detail ? (
-          <p>Select a submission to review.</p>
+          <p>{t("selectPrompt")}</p>
         ) : (
           <div>
-            <h2>Review</h2>
+            <h2>{t("review")}</h2>
             <p>
-              <strong>Category:</strong> {detail.submission.category} ·{" "}
-              <strong>Date:</strong> {detail.submission.occurrenceDate}{" "}
+              <strong>{t("category")}:</strong>{" "}
+              {tl(`category.${detail.submission.category}`)} ·{" "}
+              <strong>{t("date")}:</strong> {detail.submission.occurrenceDate}{" "}
               {detail.submission.occurrenceTime ?? ""}
             </p>
             <p>
-              <strong>Cell:</strong> {detail.submission.cellId ?? "broad area only"} ·{" "}
-              <strong>Area:</strong> {detail.submission.broadArea ?? "—"}
+              <strong>{t("cell")}:</strong>{" "}
+              {detail.submission.cellId ?? t("broadAreaOnly")} ·{" "}
+              <strong>{t("area")}:</strong> {detail.submission.broadArea ?? "—"}
             </p>
             <p>
-              <strong>Weapon:</strong> {String(detail.submission.weaponReported)} ·{" "}
-              <strong>Injury:</strong> {detail.submission.injury ?? "—"}
+              <strong>{t("weapon")}:</strong> {String(detail.submission.weaponReported)} ·{" "}
+              <strong>{t("injury")}:</strong> {detail.submission.injury ?? "—"}
             </p>
             <fieldset>
-              <legend>Original (private) account</legend>
+              <legend>{t("originalAccount")}</legend>
               <p>{detail.submission.experience}</p>
             </fieldset>
 
             {detail.evidence.length > 0 && (
               <fieldset>
-                <legend>Evidence</legend>
+                <legend>{t("evidence")}</legend>
                 {detail.evidence.map((e) => (
                   <div key={e.id}>
                     {e.fileType} — {e.scanStatus}{" "}
                     {e.downloadUrl && (
                       <a href={e.downloadUrl} target="_blank" rel="noreferrer">
-                        view
+                        {t("view")}
                       </a>
                     )}
                   </div>
@@ -143,12 +147,12 @@ export function ModerationConsole() {
             )}
 
             <fieldset>
-              <legend>Redacted public narrative</legend>
+              <legend>{t("redactedLegend")}</legend>
               <textarea
                 rows={5}
                 value={redacted}
                 onChange={(e) => setRedacted(e.target.value)}
-                placeholder="Write the redacted version that will be published. No names, faces, vehicle numbers or addresses."
+                placeholder={t("redactedPlaceholder")}
               />
               <button
                 className="btn"
@@ -156,16 +160,16 @@ export function ModerationConsole() {
                 onClick={() => act({ action: "publish", redactedNarrative: redacted })}
                 disabled={redacted.trim().length < 10}
               >
-                Publish
+                {t("publish")}
               </button>
             </fieldset>
 
             <fieldset>
-              <legend>Reject / request clarification</legend>
+              <legend>{t("rejectLegend")}</legend>
               <input
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                placeholder="Reason (shown privately to the reporter)"
+                placeholder={t("reasonPlaceholder")}
               />
               <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
                 <button
@@ -174,7 +178,7 @@ export function ModerationConsole() {
                   onClick={() => act({ action: "needs_clarification", reason })}
                   disabled={reason.trim().length < 3}
                 >
-                  Needs clarification
+                  {t("needsClarification")}
                 </button>
                 <button
                   className="btn secondary"
@@ -182,7 +186,7 @@ export function ModerationConsole() {
                   onClick={() => act({ action: "reject", reason })}
                   disabled={reason.trim().length < 3}
                 >
-                  Reject
+                  {t("reject")}
                 </button>
               </div>
             </fieldset>

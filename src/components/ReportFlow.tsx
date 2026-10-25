@@ -72,7 +72,7 @@ export function ReportFlow() {
     });
     if (!r.ok) {
       const d = await r.json().catch(() => ({}));
-      setError(d.error ?? "Submission failed");
+      setError(d.error ?? t("submitError"));
       setPhase("form");
       return;
     }
@@ -84,17 +84,14 @@ export function ReportFlow() {
   if (phase === "done") {
     return (
       <div className="notice">
-        <h2>Report received</h2>
+        <h2>{t("receiptTitle")}</h2>
+        <p>{t("receiptBody")}</p>
         <p>
-          Your report has been received and is awaiting review. It will appear
-          on the map after approval.
-        </p>
-        <p>
-          Private reference: <code>{resultId}</code>
+          {t("privateRef")} <code>{resultId}</code>
         </p>
         <p>
           <a className="btn" href="../me">
-            Track your report
+            {t("trackReport")}
           </a>
         </p>
       </div>
@@ -107,7 +104,7 @@ export function ReportFlow() {
         <p>{t("intro")}</p>
         <VerifyPanel onVerified={submit} />
         <button className="btn secondary" type="button" onClick={() => setPhase("form")}>
-          Back
+          {t("back")}
         </button>
       </div>
     );
@@ -168,12 +165,20 @@ export function ReportFlow() {
             checked={precision === "street"}
             onChange={() => setPrecision("street")}
           />{" "}
-          Approximate point (lat/lng — map picker in Stage 3)
+          {t("locationPoint")}
         </label>
         {precision === "street" && (
           <div style={{ display: "flex", gap: 8 }}>
-            <input value={lat} onChange={(e) => setLat(e.target.value)} placeholder="lat" />
-            <input value={lng} onChange={(e) => setLng(e.target.value)} placeholder="lng" />
+            <input
+              value={lat}
+              onChange={(e) => setLat(e.target.value)}
+              placeholder={t("latPlaceholder")}
+            />
+            <input
+              value={lng}
+              onChange={(e) => setLng(e.target.value)}
+              placeholder={t("lngPlaceholder")}
+            />
           </div>
         )}
         <label>
@@ -183,13 +188,13 @@ export function ReportFlow() {
             checked={precision === "area"}
             onChange={() => setPrecision("area")}
           />{" "}
-          Broad area only
+          {t("locationArea")}
         </label>
         {precision === "area" && (
           <input
             value={broadArea}
             onChange={(e) => setBroadArea(e.target.value)}
-            placeholder="e.g. Dhanmondi 27"
+            placeholder={t("areaPlaceholder")}
           />
         )}
       </fieldset>
@@ -197,7 +202,7 @@ export function ReportFlow() {
       <fieldset>
         <legend>{t("steps.datetime")}</legend>
         <label>
-          Date
+          {t("dateLabel")}
           <input
             type="date"
             value={occurrenceDate}
@@ -205,7 +210,7 @@ export function ReportFlow() {
           />
         </label>
         <label>
-          Time (optional)
+          {t("timeLabel")}
           <input
             type="time"
             value={occurrenceTime}
@@ -224,7 +229,7 @@ export function ReportFlow() {
           onChange={(e) => setExperience(e.target.value)}
           placeholder={t("experienceHint")}
         />
-        <small>{experience.trim().length} / 2000</small>
+        <small>{t("charCount", { count: experience.trim().length })}</small>
       </fieldset>
 
       <fieldset>
@@ -240,7 +245,7 @@ export function ReportFlow() {
       </fieldset>
 
       <button className="btn" type="submit" disabled={!canContinue}>
-        Continue to verification
+        {t("continue")}
       </button>
     </form>
   );

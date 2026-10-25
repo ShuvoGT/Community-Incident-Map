@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import type { Map as MlMap } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { categoryLabel, timeBandLabel, bandLabel } from "@/lib/labels";
 
 const BAND_COLOR: Record<string, string> = {
   grey: "#c7ccd1",
@@ -11,6 +11,10 @@ const BAND_COLOR: Record<string, string> = {
   amber: "#e8963f",
   red: "#d1453b",
 };
+
+// A licensed vector basemap is used when a key is configured; otherwise the map
+// renders the H3 cells over a plain background (no tiles, no licensing).
+const MAPTILER_KEY = process.env.NEXT_PUBLIC_MAPTILER_KEY;
 
 type Cell = {
   cellId: string;
@@ -42,6 +46,27 @@ type AreaSummary = {
 const CATEGORIES = ["robbery_force", "snatching", "pickpocketing", "other_theft", "attempted"];
 const TIME_BANDS = ["band_0_6", "band_6_12", "band_12_18", "band_18_24"];
 
+// Bounding box [[west,south],[east,north]] covering all cell boundaries.
+function computeBounds(
+  data: Hotspots,
+): [[number, number], [number, number]] | null {
+  let w = 180,
+    s = 90,
+    e = -180,
+    n = -90;
+  let any = false;
+  for (const c of data.cells) {
+    for (const [lng, lat] of c.boundary.coordinates[0]) {
+      any = true;
+      if (lng < w) w = lng;
+      if (lng > e) e = lng;
+      if (lat < s) s = lat;
+      if (lat > n) n = lat;
+    }
+  }
+  return any ? [[w, s], [e, n]] : null;
+}
+
 // Build a map-ready GeoJSON FeatureCollection, colouring cells by weekly band
 // or (when filtered) on a neutral intensity scale — never the band colours.
 function toFeatures(data: Hotspots) {
@@ -62,6 +87,8 @@ function toFeatures(data: Hotspots) {
 }
 
 export function HotspotMap() {
+  const t = useTranslations("map");
+  const tl = useTranslations("labels");
   const [windowDays, setWindowDays] = useState<7 | 30>(7);
   const [category, setCategory] = useState("");
   const [timeBand, setTimeBand] = useState("");
@@ -73,10 +100,11 @@ export function HotspotMap() {
   const mapRef = useRef<MlMap | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const dataRef = useRef<Hotspots | null>(null);
+  const fittedRef = useRef(false);
 
   // Push the latest data into the map source, whenever both are ready. Called
   // both when data arrives and when the map finishes loading, so neither order
-  // loses the update.
+  // loses the update. Fits the viewport to the data once per load.
   const syncData = useCallback(() => {
     const map = mapRef.current;
     const d = dataRef.current;
@@ -84,7 +112,15 @@ export function HotspotMap() {
     const src = map.getSource("cells") as
       | { setData: (x: unknown) => void }
       | undefined;
-    if (src) src.setData(toFeatures(d));
+    if (!src) return;
+    src.setData(toFeatures(d));
+    if (!fittedRef.current && d.cells.length > 0) {
+      const bounds = computeBounds(d);
+      if (bounds) {
+        map.fitBounds(bounds, { padding: 48, maxZoom: 15, duration: 0 });
+        fittedRef.current = true;
+      }
+    }
   }, []);
 
   const query = () => {
@@ -102,6 +138,7 @@ export function HotspotMap() {
       .then((d: Hotspots) => {
         if (cancelled) return;
         dataRef.current = d;
+        fittedRef.current = false; // re-fit to the new filtered data
         setData(d);
         syncData();
       })
@@ -134,16 +171,22 @@ export function HotspotMap() {
         if (cancelled || !containerRef.current) return;
         map = new Map({
           container: containerRef.current,
-          style: {
-            version: 8,
-            sources: {},
-            layers: [
-              { id: "bg", type: "background", paint: { "background-color": "#0d0f12" } },
-            ],
-          },
+          style: MAPTILER_KEY
+            ? `https://api.maptiler.com/maps/streets-v2/style.json?key=${MAPTILER_KEY}`
+            : {
+                version: 8,
+                sources: {},
+                layers: [
+                  {
+                    id: "bg",
+                    type: "background",
+                    paint: { "background-color": "#0d0f12" },
+                  },
+                ],
+              },
           center: [90.4074, 23.7806],
           zoom: 10.5,
-          attributionControl: false,
+          attributionControl: MAPTILER_KEY ? undefined : false,
         });
         map.on("load", () => {
           if (cancelled || !map) return;
@@ -198,29 +241,29 @@ export function HotspotMap() {
             onClick={() => setWindowDays(7)}
             type="button"
           >
-            Last 7 days
+            {t("last7")}
           </button>
           <button
             className={windowDays === 30 ? "btn" : "btn secondary"}
             onClick={() => setWindowDays(30)}
             type="button"
           >
-            Last 30 days
+            {t("last30")}
           </button>
         </div>
         <select value={category} onChange={(e) => setCategory(e.target.value)}>
-          <option value="">All categories</option>
+          <option value="">{t("allCategories")}</option>
           {CATEGORIES.map((c) => (
             <option key={c} value={c}>
-              {categoryLabel[c]}
+              {tl(`category.${c}`)}
             </option>
           ))}
         </select>
         <select value={timeBand} onChange={(e) => setTimeBand(e.target.value)}>
-          <option value="">Any time</option>
+          <option value="">{t("anyTime")}</option>
           {TIME_BANDS.map((b) => (
             <option key={b} value={b}>
-              {timeBandLabel[b]}
+              {tl(`timeBand.${b}`)}
             </option>
           ))}
         </select>
@@ -230,22 +273,20 @@ export function HotspotMap() {
             onClick={() => setView("map")}
             type="button"
           >
-            Map
+            {t("map")}
           </button>
           <button
             className={view === "list" ? "btn" : "btn secondary"}
             onClick={() => setView("list")}
             type="button"
           >
-            List
+            {t("list")}
           </button>
         </div>
       </div>
 
       {data && data.scale === "filtered" && (
-        <p className="notice">
-          Filtered reports — neutral scale (not the weekly activity colours).
-        </p>
+        <p className="notice">{t("filteredNotice")}</p>
       )}
 
       {view === "map" && !mapFailed ? (
@@ -280,16 +321,19 @@ function AreaList({
   data: Hotspots | null;
   onOpen: (cell: string) => void;
 }) {
-  if (!data) return <p>Loading…</p>;
-  if (data.cells.length === 0) return <p>No published reports in this period.</p>;
+  const t = useTranslations("map");
+  const tl = useTranslations("labels");
+  if (!data) return <p>{t("loading")}</p>;
+  if (data.cells.length === 0) return <p>{t("empty")}</p>;
   const sorted = [...data.cells].sort((a, b) => b.count - a.count);
   return (
     <ul style={{ listStyle: "none", padding: 0 }}>
       {sorted.map((c) => (
         <li key={c.cellId} style={{ borderTop: "1px solid var(--border)", padding: "8px 0" }}>
           <button className="btn secondary" type="button" onClick={() => onOpen(c.cellId)}>
-            {c.count} report{c.count === 1 ? "" : "s"}
-            {c.band ? ` · ${bandLabel[c.band]}` : ""} · cell {c.cellId.slice(0, 8)}…
+            {t("reports", { count: c.count })}
+            {c.band ? ` · ${tl(`band.${c.band}`)}` : ""} ·{" "}
+            {t("cellLabel", { cell: c.cellId.slice(0, 8) })}
           </button>
         </li>
       ))}
@@ -306,42 +350,43 @@ function CellSheet({
   onClose: () => void;
   window: 7 | 30;
 }) {
+  const t = useTranslations("map");
+  const tl = useTranslations("labels");
   return (
     <div className="sheet">
       <div className="sheet-inner">
         <button className="btn secondary" type="button" onClick={onClose} style={{ float: "right" }}>
-          Close
+          {t("close")}
         </button>
-        <h3>
-          {summary.count} published report{summary.count === 1 ? "" : "s"}
-        </h3>
-        {summary.band && <p>{bandLabel[summary.band]} (weekly thresholds)</p>}
+        <h3>{t("reports", { count: summary.count })}</h3>
+        {summary.band && (
+          <p>{t("weeklyThresholds", { band: tl(`band.${summary.band}`) })}</p>
+        )}
         {(summary.weaponCount > 0 || summary.injuryCount > 0) && (
           <p className="notice warn">
-            {summary.weaponCount} with a reported weapon · {summary.injuryCount} with a
-            reported injury
+            {t("weaponInjury", {
+              weapon: summary.weaponCount,
+              injury: summary.injuryCount,
+            })}
           </p>
         )}
         {summary.timeBreakdown ? (
           <p style={{ fontSize: "0.9rem" }}>
             {Object.entries(summary.timeBreakdown)
-              .map(([k, v]) => `${timeBandLabel[k] ?? k}: ${v}`)
+              .map(([k, v]) => `${tl(`timeBand.${k}`)}: ${v}`)
               .join(" · ")}
           </p>
         ) : (
           <p style={{ color: "var(--muted)", fontSize: "0.85rem" }}>
-            Time breakdown hidden for small cells.
+            {t("timeHidden")}
           </p>
         )}
         <p>
           <a className="btn" href={`area/${summary.cellId}?window=${windowDays}`}>
-            Open area summary
+            {t("openArea")}
           </a>
         </p>
-        <p style={{ color: "var(--muted)", fontSize: "0.8rem" }}>
-          Approximate area, not an exact point. Reports are incomplete and do not
-          measure personal risk.
-        </p>
+        <p style={{ color: "var(--muted)", fontSize: "0.8rem" }}>{t("approxNote")}</p>
       </div>
     </div>
   );

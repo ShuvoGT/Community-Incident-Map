@@ -1,15 +1,6 @@
 import "dotenv/config";
-import crypto from "node:crypto";
 import { Worker } from "bullmq";
-import sharp from "sharp";
-import { eq } from "drizzle-orm";
-import { db } from "../db";
-import { evidence } from "../db/schema";
-import {
-  getEvidenceObject,
-  putEvidenceObject,
-  sniffType,
-} from "../services/evidence";
+import { processEvidence } from "../services/evidence";
 import { recomputeAllWindows } from "../services/aggregates";
 import { runRetention } from "../services/retention";
 import {
@@ -33,35 +24,8 @@ import {
 const evidenceWorker = new Worker<EvidenceJob>(
   EVIDENCE_QUEUE,
   async (job) => {
-    const [row] = await db
-      .select()
-      .from(evidence)
-      .where(eq(evidence.id, job.data.evidenceId))
-      .limit(1);
-    if (!row) return;
-
-    const buf = await getEvidenceObject(row.objectKey);
-    const actual = sniffType(buf);
-
-    if (!actual || actual !== row.fileType) {
-      await db
-        .update(evidence)
-        .set({ scanStatus: "infected" }) // signature mismatch / unsupported
-        .where(eq(evidence.id, row.id));
-      return;
-    }
-
-    let sanitised = buf;
-    if (actual === "image/jpeg" || actual === "image/png") {
-      sanitised = await sharp(buf).rotate().toBuffer(); // drops EXIF/metadata
-    }
-    await putEvidenceObject(row.objectKey, sanitised, actual);
-
-    const checksum = crypto.createHash("sha256").update(sanitised).digest("hex");
-    await db
-      .update(evidence)
-      .set({ scanStatus: "clean", metadataStripped: true, checksum })
-      .where(eq(evidence.id, row.id));
+    const result = await processEvidence(job.data.evidenceId);
+    console.info(`[worker] evidence ${job.data.evidenceId}: ${result}`);
   },
   { connection },
 );

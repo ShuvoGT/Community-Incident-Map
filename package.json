@@ -17,6 +17,7 @@
     "seed:staff": "tsx src/server/scripts/seed-staff.ts",
     "seed:demo": "tsx src/server/scripts/seed-demo.ts",
     "smoke": "tsx src/server/scripts/smoke.ts",
+    "smoke:evidence": "tsx src/server/scripts/smoke-evidence.ts",
     "retention": "tsx src/server/scripts/retention.ts",
     "loadseed": "tsx src/server/scripts/loadseed.ts",
     "loadtest": "tsx src/server/scripts/loadtest.ts",

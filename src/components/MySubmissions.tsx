@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 type Row = {
   id: string;
@@ -13,6 +14,8 @@ type Row = {
 
 // Reporter's private view of their own submissions, with withdrawal.
 export function MySubmissions() {
+  const t = useTranslations("me");
+  const tl = useTranslations("labels");
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [authRequired, setAuthRequired] = useState(false);
@@ -43,23 +46,23 @@ export function MySubmissions() {
     load();
   }
 
-  if (loading) return <p>Loading…</p>;
+  if (loading) return <p>{t("loading")}</p>;
   if (authRequired)
     return (
       <p>
-        Please <a href="../login">sign in</a> to see your reports.
+        {t("signinPrompt")} <a href="../login">{t("signin")}</a>
       </p>
     );
-  if (rows.length === 0) return <p>You have no reports yet.</p>;
+  if (rows.length === 0) return <p>{t("empty")}</p>;
 
   return (
     <table style={{ width: "100%", borderCollapse: "collapse" }}>
       <thead>
         <tr style={{ textAlign: "left" }}>
-          <th>Date</th>
-          <th>Category</th>
-          <th>Area</th>
-          <th>Status</th>
+          <th>{t("colDate")}</th>
+          <th>{t("colCategory")}</th>
+          <th>{t("colArea")}</th>
+          <th>{t("colStatus")}</th>
           <th></th>
         </tr>
       </thead>
@@ -67,13 +70,13 @@ export function MySubmissions() {
         {rows.map((r) => (
           <tr key={r.id} style={{ borderTop: "1px solid var(--border)" }}>
             <td>{r.occurrenceDate}</td>
-            <td>{r.category}</td>
+            <td>{tl(`category.${r.category}`)}</td>
             <td>{r.broadArea ?? "—"}</td>
             <td>{r.status}</td>
             <td>
               {r.status !== "withdrawn" && (
                 <button className="btn secondary" type="button" onClick={() => withdraw(r.id)}>
-                  Withdraw
+                  {t("withdraw")}
                 </button>
               )}
             </td>

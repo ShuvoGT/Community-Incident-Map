@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 type Config = {
   rateLimits: Record<string, number>;
@@ -11,6 +12,7 @@ type Config = {
 };
 
 export function AdminConsole() {
+  const t = useTranslations("admin");
   const [config, setConfig] = useState<Config | null>(null);
   const [forbidden, setForbidden] = useState(false);
   const [msg, setMsg] = useState("");
@@ -39,17 +41,16 @@ export function AdminConsole() {
         ruleVersion: config.ruleVersion,
       }),
     });
-    setMsg(r.ok ? "Saved." : "Save failed.");
+    setMsg(r.ok ? t("saved") : t("saveFailed"));
   }
 
   if (forbidden)
     return (
       <p>
-        Administrator access required. Sign in with an admin account at{" "}
-        <a href="../login">/login</a>.
+        {t("forbidden")} <a href="../login">/login</a>.
       </p>
     );
-  if (!config) return <p>Loading…</p>;
+  if (!config) return <p>{t("loading")}</p>;
 
   const numField = (
     group: "rateLimits" | "retentionPolicy",
@@ -74,25 +75,25 @@ export function AdminConsole() {
   return (
     <div>
       <fieldset>
-        <legend>Rate limits &amp; abuse controls</legend>
-        {numField("rateLimits", "submissionsPerContactPerDay", "Submissions per verified contact / day")}
-        {numField("rateLimits", "otpPerContactPerHour", "OTP requests per contact / hour")}
-        {numField("rateLimits", "ipPerMinute", "Requests per IP / minute")}
+        <legend>{t("rateLegend")}</legend>
+        {numField("rateLimits", "submissionsPerContactPerDay", t("submissionsPerDay"))}
+        {numField("rateLimits", "otpPerContactPerHour", t("otpPerHour"))}
+        {numField("rateLimits", "ipPerMinute", t("ipPerMinute"))}
       </fieldset>
 
       <fieldset>
-        <legend>Retention (days / months)</legend>
-        {numField("retentionPolicy", "rejectedAbandonedDays", "Rejected / abandoned (days)")}
-        {numField("retentionPolicy", "evidenceNarrativeDays", "Evidence + original narrative (days)")}
-        {numField("retentionPolicy", "publicIncidentMonths", "Public incidents (months)")}
-        {numField("retentionPolicy", "inactiveAccountMonths", "Inactive accounts (months)")}
-        {numField("retentionPolicy", "auditLogDays", "Audit logs (days)")}
+        <legend>{t("retentionLegend")}</legend>
+        {numField("retentionPolicy", "rejectedAbandonedDays", t("rejectedDays"))}
+        {numField("retentionPolicy", "evidenceNarrativeDays", t("evidenceDays"))}
+        {numField("retentionPolicy", "publicIncidentMonths", t("publicMonths"))}
+        {numField("retentionPolicy", "inactiveAccountMonths", t("inactiveMonths"))}
+        {numField("retentionPolicy", "auditLogDays", t("auditDays"))}
       </fieldset>
 
       <fieldset>
-        <legend>Methodology</legend>
+        <legend>{t("methodologyLegend")}</legend>
         <label>
-          Rule version
+          {t("ruleVersion")}
           <input
             type="text"
             value={config.ruleVersion}
@@ -100,25 +101,27 @@ export function AdminConsole() {
           />
         </label>
         <p style={{ color: "var(--muted)", fontSize: "0.85rem" }}>
-          Grid resolution: H3 r{config.gridResolution}. Last updated{" "}
-          {new Date(config.updatedAt).toLocaleString()}.
+          {t("gridNote", {
+            res: config.gridResolution,
+            updated: new Date(config.updatedAt).toLocaleString(),
+          })}
         </p>
       </fieldset>
 
       <button className="btn" type="button" onClick={save}>
-        Save configuration
+        {t("save")}
       </button>
       {msg && <span className="notice" style={{ marginLeft: 12 }}>{msg}</span>}
 
       <fieldset style={{ marginTop: 24 }}>
-        <legend>Authority export</legend>
-        <p>Privacy-protected weekly aggregate CSV (deduplicated, no reporter data).</p>
+        <legend>{t("exportLegend")}</legend>
+        <p>{t("exportDesc")}</p>
         <div className="share">
           <a className="btn" href="/api/admin/exports?window=7">
-            Download weekly CSV
+            {t("downloadWeekly")}
           </a>
           <a className="btn secondary" href="/api/admin/exports?window=30">
-            Download 30-day CSV
+            {t("download30")}
           </a>
         </div>
       </fieldset>
@@ -129,6 +132,7 @@ export function AdminConsole() {
 }
 
 function MfaSetup() {
+  const t = useTranslations("admin");
   const [uri, setUri] = useState("");
   const [secret, setSecret] = useState("");
   const [code, setCode] = useState("");
@@ -137,7 +141,7 @@ function MfaSetup() {
   async function begin() {
     const r = await fetch("/api/admin/mfa/setup", { method: "POST" });
     if (!r.ok) {
-      setStatus("Could not start MFA setup.");
+      setStatus(t("mfaStartFailed"));
       return;
     }
     const d = await r.json();
@@ -151,19 +155,19 @@ function MfaSetup() {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ secret, code }),
     });
-    setStatus(r.ok ? "Two-factor enabled." : "Code did not verify.");
+    setStatus(r.ok ? t("mfaEnabled") : t("mfaFailed"));
   }
 
   return (
     <fieldset style={{ marginTop: 24 }}>
-      <legend>Two-factor authentication (staff)</legend>
+      <legend>{t("mfaLegend")}</legend>
       {!uri ? (
         <button className="btn secondary" type="button" onClick={begin}>
-          Set up two-factor
+          {t("mfaSetup")}
         </button>
       ) : (
         <div>
-          <p>Add this secret to your authenticator app, then enter a code:</p>
+          <p>{t("mfaSecretPrompt")}</p>
           <p>
             <code>{secret}</code>
           </p>
@@ -171,7 +175,7 @@ function MfaSetup() {
             {uri}
           </p>
           <label>
-            6-digit code
+            {t("enterCode")}
             <input
               type="text"
               inputMode="numeric"
@@ -180,7 +184,7 @@ function MfaSetup() {
             />
           </label>
           <button className="btn" type="button" onClick={enable} disabled={code.length !== 6}>
-            Enable
+            {t("enable")}
           </button>
         </div>
       )}

@@ -1,3 +1,5 @@
+import crypto from "node:crypto";
+import { eq } from "drizzle-orm";
 import {
   S3Client,
   PutObjectCommand,
@@ -117,6 +119,45 @@ export async function deleteEvidenceObject(objectKey: string): Promise<void> {
   } catch {
     /* object may already be gone, or storage unavailable */
   }
+}
+
+// Scan + sanitise one evidence object: verify the real file signature matches
+// the declared type, strip image metadata by re-encoding, re-upload the clean
+// bytes and record the result. Shared by the worker and the verification
+// script. A full malware scanner (ClamAV) plugs in before the signature check.
+export async function processEvidence(
+  evidenceId: string,
+): Promise<"clean" | "infected" | "skipped"> {
+  const [row] = await db
+    .select()
+    .from(evidence)
+    .where(eq(evidence.id, evidenceId))
+    .limit(1);
+  if (!row) return "skipped";
+
+  const buf = await getEvidenceObject(row.objectKey);
+  const actual = sniffType(buf);
+  if (!actual || actual !== row.fileType) {
+    await db
+      .update(evidence)
+      .set({ scanStatus: "infected" })
+      .where(eq(evidence.id, row.id));
+    return "infected";
+  }
+
+  let sanitised = buf;
+  if (actual === "image/jpeg" || actual === "image/png") {
+    const sharp = (await import("sharp")).default;
+    sanitised = await sharp(buf).rotate().toBuffer(); // drops EXIF/metadata
+  }
+  await putEvidenceObject(row.objectKey, sanitised, actual);
+
+  const checksum = crypto.createHash("sha256").update(sanitised).digest("hex");
+  await db
+    .update(evidence)
+    .set({ scanStatus: "clean", metadataStripped: true, checksum })
+    .where(eq(evidence.id, row.id));
+  return "clean";
 }
 
 // Magic-byte check: the declared type must match the actual file signature.

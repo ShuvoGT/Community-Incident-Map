@@ -23,7 +23,7 @@ the staged delivery plan.
 Prerequisites: Node.js ≥ 20, Docker.
 
 ```bash
-# 1. Start local infrastructure (PostGIS, Redis, MinIO)
+# 1. Start local infrastructure (PostGIS :55432, Redis :6380, S3 :9100)
 docker compose up -d
 
 # 2. Configure environment

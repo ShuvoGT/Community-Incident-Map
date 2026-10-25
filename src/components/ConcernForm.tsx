@@ -1,27 +1,29 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 // "Report a concern" about a published incident. Anonymous; a moderator
 // reviews. Flagger identity is never collected or shown.
 export function ConcernForm({ publicId }: { publicId: string }) {
+  const t = useTranslations("concern");
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [sent, setSent] = useState(false);
 
-  if (sent) return <p className="notice">Thank you — a moderator will review this.</p>;
+  if (sent) return <p className="notice">{t("thanks")}</p>;
 
   if (!open)
     return (
       <button className="btn secondary" type="button" onClick={() => setOpen(true)}>
-        Report a concern
+        {t("report")}
       </button>
     );
 
   return (
     <div className="notice">
       <label>
-        What is your concern about this report?
+        {t("prompt")}
         <textarea
           rows={3}
           value={reason}
@@ -42,7 +44,7 @@ export function ConcernForm({ publicId }: { publicId: string }) {
           setSent(true);
         }}
       >
-        Submit concern
+        {t("submit")}
       </button>
     </div>
   );

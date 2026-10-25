@@ -30,6 +30,53 @@
     "note": "These are reporting-activity levels, not validated risk levels.",
     "weaponBadge": "Weapon or injury reported"
   },
+  "labels": {
+    "category": {
+      "robbery_force": "Robbery with force or threat",
+      "snatching": "Snatching",
+      "pickpocketing": "Pickpocketing",
+      "other_theft": "Other theft",
+      "attempted": "Attempted robbery or theft"
+    },
+    "timeBand": {
+      "band_0_6": "Late night (00:00–05:59)",
+      "band_6_12": "Morning (06:00–11:59)",
+      "band_12_18": "Afternoon (12:00–17:59)",
+      "band_18_24": "Evening (18:00–23:59)",
+      "unknown": "Time unknown"
+    },
+    "reviewLabel": {
+      "community_reviewed": "Community report reviewed — not independently confirmed",
+      "supporting_reviewed": "Supporting material reviewed",
+      "independently_corroborated": "Independently corroborated",
+      "disputed": "Disputed and under review"
+    },
+    "band": {
+      "grey": "No published reports in this period",
+      "yellow": "Some reported incidents",
+      "amber": "Elevated reported activity",
+      "red": "High reported activity"
+    }
+  },
+  "map": {
+    "last7": "Last 7 days",
+    "last30": "Last 30 days",
+    "allCategories": "All categories",
+    "anyTime": "Any time",
+    "map": "Map",
+    "list": "List",
+    "filteredNotice": "Filtered reports — neutral scale (not the weekly activity colours).",
+    "loading": "Loading…",
+    "empty": "No published reports in this period.",
+    "reports": "{count, plural, one {# report} other {# reports}}",
+    "cellLabel": "cell {cell}…",
+    "openArea": "Open area summary",
+    "close": "Close",
+    "weeklyThresholds": "{band} (weekly thresholds)",
+    "weaponInjury": "{weapon} with a reported weapon · {injury} with a reported injury",
+    "timeHidden": "Time breakdown hidden for small cells.",
+    "approxNote": "Approximate area, not an exact point. Reports are incomplete and do not measure personal risk."
+  },
   "report": {
     "title": "Report an incident",
     "emergencyNotice": "If you are in immediate danger, contact emergency services first. This platform does not dispatch police.",
@@ -56,14 +103,147 @@
       "victim": "I was the victim",
       "witness": "I directly witnessed it"
     },
+    "locationPoint": "Approximate point (latitude / longitude)",
+    "locationArea": "Broad area only",
+    "latPlaceholder": "latitude",
+    "lngPlaceholder": "longitude",
+    "areaPlaceholder": "e.g. Dhanmondi 27",
+    "dateLabel": "Date",
+    "timeLabel": "Time (optional)",
     "experienceHint": "Describe the sequence of events and context. Do not include names, phone numbers or details that could identify anyone.",
+    "charCount": "{count} / 2000",
     "consentLabel": "I agree to the reporting rules and to anonymous public publication of a reviewed version.",
-    "submit": "Submit for review",
-    "prototypeNotice": "Prototype — this flow is not yet connected to the backend."
+    "continue": "Continue to verification",
+    "back": "Back",
+    "submitError": "Submission failed",
+    "receiptTitle": "Report received",
+    "receiptBody": "Your report has been received and is awaiting review. It will appear on the map after approval.",
+    "privateRef": "Private reference:",
+    "trackReport": "Track your report"
   },
-  "receipt": {
-    "title": "Report received",
-    "body": "Your report has been received and is awaiting review. It will appear on the map after approval.",
-    "statusLink": "Keep this private link to track your report."
+  "verify": {
+    "legend": "Verify your contact",
+    "email": "Email",
+    "emailPlaceholder": "you@example.com",
+    "sendCode": "Send code",
+    "code": "6-digit code",
+    "codePlaceholder": "123456",
+    "verify": "Verify",
+    "mfaCode": "Authenticator code",
+    "verifyCode": "Verify code",
+    "codeSent": "Code sent. In development, check the server console.",
+    "sendFailed": "Could not send a code. Check the email and try again.",
+    "mfaPrompt": "Enter the code from your authenticator app.",
+    "failed": "Verification failed",
+    "invalidCode": "Invalid code"
+  },
+  "login": {
+    "title": "Sign in",
+    "intro": "Verify your email to submit, track or review reports."
+  },
+  "me": {
+    "title": "My reports",
+    "loading": "Loading…",
+    "signinPrompt": "Please sign in to see your reports.",
+    "signin": "sign in",
+    "empty": "You have no reports yet.",
+    "colDate": "Date",
+    "colCategory": "Category",
+    "colArea": "Area",
+    "colStatus": "Status",
+    "withdraw": "Withdraw"
+  },
+  "moderate": {
+    "title": "Moderation queue",
+    "forbidden": "Moderator access required. Sign in with a staff account.",
+    "queue": "Queue ({count})",
+    "nothing": "Nothing awaiting review.",
+    "selectPrompt": "Select a submission to review.",
+    "review": "Review",
+    "category": "Category",
+    "date": "Date",
+    "cell": "Cell",
+    "area": "Area",
+    "weapon": "Weapon",
+    "injury": "Injury",
+    "broadAreaOnly": "broad area only",
+    "originalAccount": "Original (private) account",
+    "evidence": "Evidence",
+    "view": "view",
+    "redactedLegend": "Redacted public narrative",
+    "redactedPlaceholder": "Write the redacted version that will be published. No names, faces, vehicle numbers or addresses.",
+    "publish": "Publish",
+    "rejectLegend": "Reject / request clarification",
+    "reasonPlaceholder": "Reason (shown privately to the reporter)",
+    "needsClarification": "Needs clarification",
+    "reject": "Reject",
+    "done": "Done.",
+    "actionFailed": "Action failed"
+  },
+  "admin": {
+    "title": "Admin settings",
+    "forbidden": "Administrator access required. Sign in with an admin account.",
+    "loading": "Loading…",
+    "rateLegend": "Rate limits & abuse controls",
+    "submissionsPerDay": "Submissions per verified contact / day",
+    "otpPerHour": "OTP requests per contact / hour",
+    "ipPerMinute": "Requests per IP / minute",
+    "retentionLegend": "Retention (days / months)",
+    "rejectedDays": "Rejected / abandoned (days)",
+    "evidenceDays": "Evidence + original narrative (days)",
+    "publicMonths": "Public incidents (months)",
+    "inactiveMonths": "Inactive accounts (months)",
+    "auditDays": "Audit logs (days)",
+    "methodologyLegend": "Methodology",
+    "ruleVersion": "Rule version",
+    "gridNote": "Grid resolution: H3 r{res}. Last updated {updated}.",
+    "save": "Save configuration",
+    "saved": "Saved.",
+    "saveFailed": "Save failed.",
+    "exportLegend": "Authority export",
+    "exportDesc": "Privacy-protected weekly aggregate CSV (deduplicated, no reporter data).",
+    "downloadWeekly": "Download weekly CSV",
+    "download30": "Download 30-day CSV",
+    "mfaLegend": "Two-factor authentication (staff)",
+    "mfaSetup": "Set up two-factor",
+    "mfaSecretPrompt": "Add this secret to your authenticator app, then enter a code:",
+    "enterCode": "6-digit code",
+    "enable": "Enable",
+    "mfaEnabled": "Two-factor enabled.",
+    "mfaFailed": "Code did not verify.",
+    "mfaStartFailed": "Could not start MFA setup."
+  },
+  "share": {
+    "share": "Share",
+    "linkCopied": "Link copied",
+    "downloadCard": "Download card"
+  },
+  "concern": {
+    "report": "Report a concern",
+    "prompt": "What is your concern about this report?",
+    "submit": "Submit concern",
+    "thanks": "Thank you — a moderator will review this."
+  },
+  "incident": {
+    "unavailableTitle": "Report unavailable",
+    "unavailableBody": "This report is not currently available.",
+    "weaponReported": "Weapon reported.",
+    "injuryReported": "Injury reported.",
+    "approxNote": "Approximate area, not an exact incident point. Community reports are incomplete and do not measure personal risk.",
+    "reportId": "Report ID:"
+  },
+  "area": {
+    "title": "Area reporting summary",
+    "meta": "{start} – {end} · {tz} · cell {cell}",
+    "summary": "{count, plural, one {# published report} other {# published reports}} this week.",
+    "activitySuffix": "{band} under the weekly thresholds.",
+    "riskNote": "An area summary reflects reporting activity, not personal risk; reporting is incomplete.",
+    "weaponInjury": "{weapon} with a reported weapon · {injury} with a reported injury.",
+    "timePattern": "Time pattern",
+    "timeHidden": "Time breakdown is hidden for cells with fewer than five reports.",
+    "reportsHeading": "Reports in this area",
+    "empty": "No published reports in this period.",
+    "shareTitle": "Area reporting summary",
+    "shareText": "{count} published report(s) this week in this Dhaka area."
   }
 }

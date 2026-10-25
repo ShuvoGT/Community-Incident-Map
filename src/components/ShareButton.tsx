@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 // Share an approved public page: native share sheet where available, with
 // copy-link and download-card fallbacks. Only ever used on published pages.
@@ -15,6 +16,7 @@ export function ShareButton({
   text: string;
   cardUrl?: string;
 }) {
+  const t = useTranslations("share");
   const [copied, setCopied] = useState(false);
 
   async function share() {
@@ -39,11 +41,11 @@ export function ShareButton({
   return (
     <span className="share">
       <button className="btn" type="button" onClick={share}>
-        {copied ? "Link copied" : "Share"}
+        {copied ? t("linkCopied") : t("share")}
       </button>
       {cardUrl && (
         <a className="btn secondary" href={cardUrl} target="_blank" rel="noreferrer">
-          Download card
+          {t("downloadCard")}
         </a>
       )}
     </span>

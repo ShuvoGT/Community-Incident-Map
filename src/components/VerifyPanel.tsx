@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 // Reusable contact-verification widget. Requests a one-time code, then
 // confirms it; on success a session cookie is set by the API and onVerified
 // fires. In development the code is printed to the server console.
 export function VerifyPanel({ onVerified }: { onVerified: () => void }) {
+  const t = useTranslations("verify");
   const [contact, setContact] = useState("");
   const [code, setCode] = useState("");
   const [sent, setSent] = useState(false);
@@ -25,9 +27,9 @@ export function VerifyPanel({ onVerified }: { onVerified: () => void }) {
       });
       if (!r.ok) throw new Error();
       setSent(true);
-      setMsg("Code sent. In development, check the server console.");
+      setMsg(t("codeSent"));
     } catch {
-      setMsg("Could not send a code. Check the email and try again.");
+      setMsg(t("sendFailed"));
     } finally {
       setBusy(false);
     }
@@ -43,17 +45,15 @@ export function VerifyPanel({ onVerified }: { onVerified: () => void }) {
         body: JSON.stringify({ contact, contactType: "email", code }),
       });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) {
-        throw new Error(d.error ?? "Verification failed");
-      }
+      if (!r.ok) throw new Error(d.error ?? t("failed"));
       if (d.mfaRequired) {
         setMfaRequired(true);
-        setMsg("Enter the code from your authenticator app.");
+        setMsg(t("mfaPrompt"));
         return;
       }
       onVerified();
     } catch (e) {
-      setMsg(e instanceof Error ? e.message : "Verification failed");
+      setMsg(e instanceof Error ? e.message : t("failed"));
     } finally {
       setBusy(false);
     }
@@ -68,10 +68,10 @@ export function VerifyPanel({ onVerified }: { onVerified: () => void }) {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ code: mfaCode }),
       });
-      if (!r.ok) throw new Error("Invalid code");
+      if (!r.ok) throw new Error(t("invalidCode"));
       onVerified();
     } catch (e) {
-      setMsg(e instanceof Error ? e.message : "Invalid code");
+      setMsg(e instanceof Error ? e.message : t("invalidCode"));
     } finally {
       setBusy(false);
     }
@@ -79,17 +79,17 @@ export function VerifyPanel({ onVerified }: { onVerified: () => void }) {
 
   return (
     <fieldset>
-      <legend>Verify your contact</legend>
+      <legend>{t("legend")}</legend>
       {mfaRequired ? (
         <>
           <label>
-            Authenticator code
+            {t("mfaCode")}
             <input
               type="text"
               inputMode="numeric"
               value={mfaCode}
               onChange={(e) => setMfaCode(e.target.value)}
-              placeholder="123456"
+              placeholder={t("codePlaceholder")}
             />
           </label>
           <button
@@ -98,39 +98,39 @@ export function VerifyPanel({ onVerified }: { onVerified: () => void }) {
             onClick={confirmMfa}
             disabled={busy || mfaCode.length !== 6}
           >
-            Verify code
+            {t("verifyCode")}
           </button>
         </>
       ) : (
         <>
           <label>
-            Email
+            {t("email")}
             <input
               type="text"
               value={contact}
               onChange={(e) => setContact(e.target.value)}
-              placeholder="you@example.com"
+              placeholder={t("emailPlaceholder")}
               autoComplete="email"
             />
           </label>
           {!sent ? (
             <button className="btn" type="button" onClick={sendCode} disabled={busy || !contact}>
-              Send code
+              {t("sendCode")}
             </button>
           ) : (
             <>
               <label>
-                6-digit code
+                {t("code")}
                 <input
                   type="text"
                   inputMode="numeric"
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
-                  placeholder="123456"
+                  placeholder={t("codePlaceholder")}
                 />
               </label>
               <button className="btn" type="button" onClick={confirm} disabled={busy || code.length !== 6}>
-                Verify
+                {t("verify")}
               </button>
             </>
           )}
