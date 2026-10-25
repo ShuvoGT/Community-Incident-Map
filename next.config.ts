@@ -9,6 +9,8 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // Server-only native/optional-dep packages: load at runtime, don't bundle.
   serverExternalPackages: ["bullmq", "ioredis", "sharp"],
+  // Small self-contained server bundle for Docker deploys.
+  output: "standalone",
 };
 
 export default withNextIntl(nextConfig);

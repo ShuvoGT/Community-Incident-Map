@@ -1,0 +1,11 @@
+node_modules
+.next
+.git
+.env
+.env*.local
+test-results
+playwright-report
+drizzle/meta/_journal.json.bak
+*.md
+Dockerfile
+.dockerignore
